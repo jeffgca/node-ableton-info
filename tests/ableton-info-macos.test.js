@@ -51,9 +51,11 @@ test('getMacOSVersion handles execution correctly', async () => {
 test('getExactVersionFromAppBundle returns version from Info.plist', async () => {
 	const instance = new AbletonInfoMacOS()
 
-	vi.mocked(execSync).mockReturnValueOnce('12.1.5\n')
+	vi.mocked(execSync).mockReturnValueOnce(
+		{ version: '12.1.5', build: '2025-12-15_bba1e05a87' }.version,
+	)
 
-	const version = instance.getLiveVersionFromAppBundle(
+	const result = instance.getLiveVersionFromAppBundle(
 		'/Applications/Ableton Live 12 Suite.app',
 	)
 
@@ -61,7 +63,7 @@ test('getExactVersionFromAppBundle returns version from Info.plist', async () =>
 		'plutil -extract CFBundleShortVersionString raw "/Applications/Ableton Live 12 Suite.app/Contents/Info.plist"',
 		{ encoding: 'utf8' },
 	)
-	expect(version).toBe('12.1.5')
+	expect(result.version).toBe('12.1.5')
 
 	vi.clearAllMocks()
 })
