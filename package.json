@@ -1,0 +1,24 @@
+{
+	"name": "node",
+	"version": "0.0.1",
+	"description": "Template node module.",
+	"main": "index.js",
+	"scripts": {
+		"test": "vitest",
+		"watch": "vitest --watch",
+		"coverage": "vitest run --coverage"
+	},
+	"keywords": [],
+	"author": "Jeff Griffiths (  https://github.com/jeffgca )",
+	"license": "ISC",
+	"type": "module",
+	"devDependencies": {
+		"vitest": "^2.0.0",
+		"@vitest/coverage-v8": "^2.0.0",
+		"nodemon": "^3.1.11"
+	},
+	"dependencies": {
+		"dotenv": "^16.6.1",
+		"lodash-es": "^4.17.22"
+	}
+}
