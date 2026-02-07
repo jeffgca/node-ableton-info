@@ -13,12 +13,13 @@
 	"license": "ISC",
 	"type": "module",
 	"devDependencies": {
-		"vitest": "^2.0.0",
 		"@vitest/coverage-v8": "^2.0.0",
-		"nodemon": "^3.1.11"
+		"nodemon": "^3.1.11",
+		"vitest": "^2.0.0"
 	},
 	"dependencies": {
 		"dotenv": "^16.6.1",
-		"lodash-es": "^4.17.22"
+		"lodash-es": "^4.17.22",
+		"yargs": "^18.0.0"
 	}
 }

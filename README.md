@@ -1,33 +1,17 @@
-# Basic Node Template
+# Ableton Install Info Tools
 
-![CI](https://github.com/jeffgca/node-tpl/actions/workflows/test.yml/badge.svg)
+> Get info about what versions of Ableton are installed and some info about what preferences are set in different versions, custom like plugin locations.
 
-> Minimal Node module starter with tests.
+# Todo
 
-## Requirements
+- [ ] utilities to try to determine what types of plugins are enabled and any custom locations
 
-- Node: >= 20 (verified with Node 22)
-- Package manager: pnpm
+# Done
 
-## Testing (Vitest)
+- [x] macOS app locations and app versions, preference locations
 
-- Run tests: `pnpm test`
-- Watch mode: `pnpm watch`
-- Coverage: `pnpm run coverage` (HTML report in `coverage/index.html`)
+## Notes
 
-## Why Vitest?
-
-- Fast, Vite-powered transforms
-- Native ESM support (no `--experimental-vm-modules` flags)
-- Jest-compatible APIs via `vi.*` (e.g., `vi.fn`, `vi.spyOn`, `vi.mock`)
-
-## Migrated From Jest
-
-- Replaced Jest scripts with Vitest in [package.json](package.json).
-- Added [vitest.config.js](vitest.config.js) for Node environment, globals, and V8 coverage.
-- Tests using global `test`/`expect` continue to work unchanged.
-
-## Links
-
-- Vitest Guide: https://vitest.dev/guide/
-- Vitest Config Reference: https://vitest.dev/config/
+- VST Preferences strings:
+  - Vst3Preferences
+  - Vst2Preferences
