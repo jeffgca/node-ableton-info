@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import AbletonPrefs from '../lib/ableton-prefs.js'
+import { AbletonPrefs } from '../lib/ableton-prefs.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
