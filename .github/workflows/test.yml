@@ -39,6 +39,6 @@ jobs:
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-html
+          name: coverage-html-${{ matrix.os }}
           path: coverage/
           if-no-files-found: warn
