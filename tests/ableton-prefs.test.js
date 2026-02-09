@@ -405,6 +405,109 @@ describe('AbletonPrefs', () => {
 		})
 	})
 
+	describe('extractVst3CustomPathUnified', () => {
+		let prefsPath
+		let prefs
+
+		beforeEach(async () => {
+			prefsPath = path.join(__dirname, 'testdata', 'Preferences.cfg')
+			prefs = await new AbletonPrefs(prefsPath)
+		})
+
+		it('should extract macOS path from byte array', () => {
+			// Example: Vst3Preferences\x02\x01\x01#/Users/jeff/Desktop/tmp/vst3-custom\x15
+			const testString =
+				'Vst3Preferences\x02\x01\x01#/Users/jeff/Desktop/tmp/vst3-custom\x15TempoFollowerPrefData'
+			const bytes = new TextEncoder().encode(testString)
+
+			const result = prefs.extractVst3CustomPathUnified(bytes)
+			expect(result).toBe('/Users/jeff/Desktop/tmp/vst3-custom')
+		})
+
+		it('should extract Windows path with spaces from byte array', () => {
+			// Example: Vst3Preferences\x02\x01\x01)C:/Users/aniso/OneDrive/Desktop/hack/vst3\x15
+			const testString =
+				'Vst3Preferences\x02\x01\x01)C:/Users/aniso/OneDrive/Desktop/hack/vst3\x15TempoFollowerPrefData'
+			const bytes = new TextEncoder().encode(testString)
+
+			const result = prefs.extractVst3CustomPathUnified(bytes)
+			expect(result).toBe('C:/Users/aniso/OneDrive/Desktop/hack/vst3')
+		})
+
+		it('should extract Windows path without spaces', () => {
+			const testString =
+				'Vst3Preferences\x02\x01\x01)C:/Users/test/vst3\x15TempoFollowerPrefData'
+			const bytes = new TextEncoder().encode(testString)
+
+			const result = prefs.extractVst3CustomPathUnified(bytes)
+			expect(result).toBe('C:/Users/test/vst3')
+		})
+
+		it('should extract Windows path with backslashes', () => {
+			const testString =
+				'Vst3Preferences\x02\x01\x01)C:\\Users\\test\\vst3\x15TempoFollowerPrefData'
+			const bytes = new TextEncoder().encode(testString)
+
+			const result = prefs.extractVst3CustomPathUnified(bytes)
+			expect(result).toBe('C:\\Users\\test\\vst3')
+		})
+
+		it('should extract macOS path with hyphens', () => {
+			const testString =
+				'Vst3Preferences\x02\x01\x01#/Users/test-user/Desktop/my-vst3\x15TempoFollowerPrefData'
+			const bytes = new TextEncoder().encode(testString)
+
+			const result = prefs.extractVst3CustomPathUnified(bytes)
+			expect(result).toBe('/Users/test-user/Desktop/my-vst3')
+		})
+
+		it('should return false when no path pattern is found', () => {
+			const bytes = new Uint8Array([1, 2, 3, 4, 5])
+			const result = prefs.extractVst3CustomPathUnified(bytes)
+			expect(result).toBe(false)
+		})
+
+		it('should return false when path does not have terminator', () => {
+			const testString =
+				'Vst3Preferences\x02\x01\x01#/Users/jeff/Desktop/tmp/vst3-custom'
+			const bytes = new TextEncoder().encode(testString)
+
+			const result = prefs.extractVst3CustomPathUnified(bytes)
+			expect(result).toBe(false)
+		})
+
+		it('should handle actual file bytes from vst3-custom-enabled config', async () => {
+			prefsPath = path.join(
+				__dirname,
+				'testdata',
+				'live-11',
+				'Preferences-vst3-custom-enabled.cfg',
+			)
+			prefs = await new AbletonPrefs(prefsPath)
+
+			// Get the actual bytes from the file
+			const indexes = prefs.findAllOccurrences('Vst3Preferences', prefs.bytes)
+			const bytes = prefs.bytes.slice(indexes[1], indexes[1] + 200)
+
+			const result = prefs.extractVst3CustomPathUnified(bytes)
+
+			// Should extract the path (will be macOS path since it's from test data)
+			expect(result).toBeTruthy()
+			expect(typeof result).toBe('string')
+			expect(result).toMatch(/^\//)
+		})
+
+		it('should work consistently with filter logic', () => {
+			// Simulate byte array that bytesToStringArr would process
+			const testString =
+				'Vst3Preferences\x02\x01\x01#/Users/jeff/Desktop/tmp/vst3-custom\x15'
+			const bytes = new TextEncoder().encode(testString)
+
+			const result = prefs.extractVst3CustomPathUnified(bytes)
+			expect(result).toBe('/Users/jeff/Desktop/tmp/vst3-custom')
+		})
+	})
+
 	describe('integration tests', () => {
 		it('should handle Preferences.cfg file', async () => {
 			prefsPath = path.join(__dirname, 'testdata', 'Preferences.cfg')
