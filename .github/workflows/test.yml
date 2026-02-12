@@ -34,11 +34,11 @@ jobs:
         run: pnpm exec vitest run
 
       - name: macOS Coverage
-        if: runner.os == 'macos-latest'
+        if: matrix.os == 'macos-latest'
         run: pnpm run coverage:macos
 
       - name: Windows Coverage
-        if: runner.os == 'windows-2022'
+        if: matrix.os == 'windows-2022'
         run: pnpm run coverage:windows
 
       - name: Upload coverage artifact
