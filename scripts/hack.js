@@ -6,27 +6,21 @@ let live = new AbletonInfoMacOS()
 // console.log('get ableton versions', live.getInstalledLiveVersions())
 
 let winfiles = [
-	'./tests/testdata/win64/Preferences-all-x64.cfg',
-	'./tests/testdata/win64/Preferences-init-x64.cfg',
+	// './tests/testdata/win64/Preferences-all-x64.cfg',
+	// './tests/testdata/win64/Preferences-init-x64.cfg',
 	'./tests/testdata/live-11/Preferences-all-prefs-set.cfg',
 ]
 
 winfiles.forEach(async (file) => {
 	let prefs = await new AbletonPrefs(file)
 
-	// console.log('plugin config', prefs.PluginConfig)
+	console.log(`\n\nPrefs from file: ${file}`)
 
-	console.log('file', file)
-	// let bytes = prefs.bytes
+	console.log(prefs.PluginConfig)
 
-	let indexes = prefs.findAllOccurrences('Vst3Preferences', prefs.bytes)
+	let plugins = new PluginInfoMacOS(prefs.PluginConfig)
 
-	console.log('indexes', indexes)
-
-	let _bytes = prefs.bytes.slice(indexes[1], indexes[1] + 300)
-	let _charArr = prefs.bytesToStringArr(_bytes)
-
-	// console.log('strBytes', _charArr)
-
-	console.log('path', prefs.extractVst3CustomPathUnified(_bytes))
+	console.log('VST3 Plugins found:', await plugins.getVst3Plugins())
+	console.log('VST2 Plugins found:', await plugins.getVst2Plugins())
+	console.log('AU Plugins found:', await plugins.getAudioUnitPlugins())
 })

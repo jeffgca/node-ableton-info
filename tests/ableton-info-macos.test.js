@@ -1,6 +1,7 @@
 import { expect, test, vi, describe } from 'vitest'
 import { execSync } from 'child_process'
 import os, { platform } from 'os'
+import fs from 'node:fs'
 
 vi.mock('child_process', async () => {
 	const actual = await vi.importActual('child_process')
@@ -22,42 +23,54 @@ test('AbletonInfoMacOS constructor throws on non-macOS platform', () => {
 	platformSpy.mockRestore()
 })
 
+test('PluginInfoMacOS constructor throws on non-macOS platform', () => {
+	const platformSpy = vi.spyOn(os, 'platform').mockReturnValue('win32')
+
+	expect(() => new PluginInfoMacOS()).toThrow(
+		'PluginInfoMacOS can only be used on macOS',
+	)
+
+	platformSpy.mockRestore()
+})
+
 describe.skipIf(platform() !== 'darwin')('AbletonInfoMacOS', () => {
-	test('getVst2Plugins returns only .vst files from default VST path', async () => {
+	test('getVst2Plugins returns empty list when VST2 is disabled by config', async () => {
 		const readdirSpy = vi
-			.fn()
+			.spyOn(fs.promises, 'readdir')
 			.mockResolvedValue(['Synth.vst', 'Chord.vst', 'Readme.txt', 'FX.vst3'])
 
-		globalThis.fs = { promises: { readdir: readdirSpy } }
-
 		const instance = new PluginInfoMacOS()
-		const result = await instance.getVst2Plugins()
+		const result = await instance.getVst2Plugins(false)
 
-		expect(readdirSpy).toHaveBeenCalledTimes(1)
-		expect(readdirSpy).toHaveBeenCalledWith('/Library/Audio/Plug-Ins/VST/')
-		expect(result).toEqual([
-			'/Library/Audio/Plug-Ins/VST/Synth.vst',
-			'/Library/Audio/Plug-Ins/VST/Chord.vst',
-		])
+		expect(readdirSpy).toHaveBeenCalledTimes(0)
+		expect(result).toEqual([])
 
-		delete globalThis.fs
+		readdirSpy.mockRestore()
 	})
 
-	test('getVst2Plugins includes plugins from default and custom VST2 paths', async () => {
-		const readdirSpy = vi.fn().mockImplementation((path) => {
-			if (path === '/Library/Audio/Plug-Ins/VST/') {
-				return Promise.resolve(['DefaultSynth.vst', 'ignore.vst3'])
-			}
-			if (path === '/Users/test/VST2/') {
-				return Promise.resolve(['CustomEQ.vst', 'notes.md'])
-			}
-			return Promise.resolve([])
+	test('getVst2Plugins includes plugins from default and custom VST2 paths when enabled', async () => {
+		const readdirSpy = vi
+			.spyOn(fs.promises, 'readdir')
+			.mockImplementation((path) => {
+				if (path === '/Library/Audio/Plug-Ins/VST/') {
+					return Promise.resolve(['DefaultSynth.vst', 'ignore.vst3'])
+				}
+				if (path === '/Users/test/VST2/') {
+					return Promise.resolve(['CustomEQ.vst', 'notes.md'])
+				}
+				return Promise.resolve([])
+			})
+
+		const instance = new PluginInfoMacOS({
+			vst2: {
+				isEnabled: true,
+				isCustomPathEnabled: true,
+				customPath: '/Users/test/VST2/',
+			},
 		})
-
-		globalThis.fs = { promises: { readdir: readdirSpy } }
-
-		const instance = new PluginInfoMacOS({ customVst2: '/Users/test/VST2/' })
-		const result = await instance.getVst2Plugins()
+		await new Promise((resolve) => setTimeout(resolve, 0))
+		readdirSpy.mockClear()
+		const result = await instance.getVst2Plugins(false)
 
 		expect(readdirSpy).toHaveBeenCalledTimes(2)
 		expect(readdirSpy).toHaveBeenNthCalledWith(
@@ -70,44 +83,46 @@ describe.skipIf(platform() !== 'darwin')('AbletonInfoMacOS', () => {
 			'/Users/test/VST2/CustomEQ.vst',
 		])
 
-		delete globalThis.fs
+		readdirSpy.mockRestore()
 	})
 
-	test('getVst3Plugins returns only .vst3 files from default VST3 path', async () => {
+	test('getVst3Plugins returns empty list when VST3 is disabled by config', async () => {
 		const readdirSpy = vi
-			.fn()
+			.spyOn(fs.promises, 'readdir')
 			.mockResolvedValue(['StereoTool.vst3', 'Pad.vst3', 'Legacy.vst'])
 
-		globalThis.fs = { promises: { readdir: readdirSpy } }
-
 		const instance = new PluginInfoMacOS()
-		const result = await instance.getVst3Plugins()
+		const result = await instance.getVst3Plugins(false)
 
-		expect(readdirSpy).toHaveBeenCalledTimes(1)
-		expect(readdirSpy).toHaveBeenCalledWith('/Library/Audio/Plug-Ins/VST3/')
-		expect(result).toEqual([
-			'/Library/Audio/Plug-Ins/VST3/StereoTool.vst3',
-			'/Library/Audio/Plug-Ins/VST3/Pad.vst3',
-		])
+		expect(readdirSpy).toHaveBeenCalledTimes(0)
+		expect(result).toEqual([])
 
-		delete globalThis.fs
+		readdirSpy.mockRestore()
 	})
 
-	test('getVst3Plugins includes plugins from default and custom VST3 paths', async () => {
-		const readdirSpy = vi.fn().mockImplementation((path) => {
-			if (path === '/Library/Audio/Plug-Ins/VST3/') {
-				return Promise.resolve(['DefaultComp.vst3', 'skip.vst'])
-			}
-			if (path === '/Users/test/VST3/') {
-				return Promise.resolve(['CustomLimiter.vst3', 'readme.txt'])
-			}
-			return Promise.resolve([])
+	test('getVst3Plugins includes plugins from default and custom VST3 paths when enabled', async () => {
+		const readdirSpy = vi
+			.spyOn(fs.promises, 'readdir')
+			.mockImplementation((path) => {
+				if (path === '/Library/Audio/Plug-Ins/VST3/') {
+					return Promise.resolve(['DefaultComp.vst3', 'skip.vst'])
+				}
+				if (path === '/Users/test/VST3/') {
+					return Promise.resolve(['CustomLimiter.vst3', 'readme.txt'])
+				}
+				return Promise.resolve([])
+			})
+
+		const instance = new PluginInfoMacOS({
+			vst3: {
+				isEnabled: true,
+				isCustomPathEnabled: true,
+				customPath: '/Users/test/VST3/',
+			},
 		})
-
-		globalThis.fs = { promises: { readdir: readdirSpy } }
-
-		const instance = new PluginInfoMacOS({ customVst3: '/Users/test/VST3/' })
-		const result = await instance.getVst3Plugins()
+		await new Promise((resolve) => setTimeout(resolve, 0))
+		readdirSpy.mockClear()
+		const result = await instance.getVst3Plugins(false)
 
 		expect(readdirSpy).toHaveBeenCalledTimes(2)
 		expect(readdirSpy).toHaveBeenNthCalledWith(
@@ -120,22 +135,22 @@ describe.skipIf(platform() !== 'darwin')('AbletonInfoMacOS', () => {
 			'/Users/test/VST3/CustomLimiter.vst3',
 		])
 
-		delete globalThis.fs
+		readdirSpy.mockRestore()
 	})
 
 	test('getAudioUnitPlugins returns only .component files from default Components path', async () => {
 		const readdirSpy = vi
-			.fn()
+			.spyOn(fs.promises, 'readdir')
 			.mockResolvedValue([
 				'ClassicCompressor.component',
 				'SpatialVerb.component',
 				'not-a-plugin.txt',
 			])
 
-		globalThis.fs = { promises: { readdir: readdirSpy } }
-
 		const instance = new PluginInfoMacOS()
-		const result = await instance.getAudioUnitPlugins()
+		await new Promise((resolve) => setTimeout(resolve, 0))
+		readdirSpy.mockClear()
+		const result = await instance.getAudioUnitPlugins(false)
 
 		expect(readdirSpy).toHaveBeenCalledTimes(1)
 		expect(readdirSpy).toHaveBeenCalledWith(
@@ -146,24 +161,61 @@ describe.skipIf(platform() !== 'darwin')('AbletonInfoMacOS', () => {
 			'/Library/Audio/Plug-Ins/Components/SpatialVerb.component',
 		])
 
-		delete globalThis.fs
+		readdirSpy.mockRestore()
 	})
 
-	test('getAudioUnitPlugins returns empty list when Components path cannot be read', async () => {
-		const readdirSpy = vi.fn().mockRejectedValue(new Error('permission denied'))
-
-		globalThis.fs = { promises: { readdir: readdirSpy } }
+	test('getAudioUnitPlugins throws when Components path cannot be read', async () => {
+		const readdirSpy = vi.spyOn(fs.promises, 'readdir').mockResolvedValue([])
 
 		const instance = new PluginInfoMacOS()
-		const result = await instance.getAudioUnitPlugins()
+		await new Promise((resolve) => setTimeout(resolve, 0))
+
+		readdirSpy.mockClear()
+		readdirSpy.mockRejectedValue(new Error('permission denied'))
+
+		await expect(instance.getAudioUnitPlugins(false)).rejects.toThrow(
+			'permission denied',
+		)
 
 		expect(readdirSpy).toHaveBeenCalledTimes(1)
 		expect(readdirSpy).toHaveBeenCalledWith(
 			'/Library/Audio/Plug-Ins/Components/',
 		)
-		expect(result).toEqual([])
 
-		delete globalThis.fs
+		readdirSpy.mockRestore()
+	})
+
+	test('refreshPlugins refreshes all plugin caches using non-cached getter calls', async () => {
+		const instance = new PluginInfoMacOS()
+		await new Promise((resolve) => setTimeout(resolve, 0))
+
+		const refreshedVst = ['/tmp/refreshed.vst']
+		const refreshedVst3 = ['/tmp/refreshed.vst3']
+		const refreshedAu = ['/tmp/refreshed.component']
+
+		const getVst2PluginsSpy = vi
+			.spyOn(instance, 'getVst2Plugins')
+			.mockResolvedValue(refreshedVst)
+		const getVst3PluginsSpy = vi
+			.spyOn(instance, 'getVst3Plugins')
+			.mockResolvedValue(refreshedVst3)
+		const getAudioUnitPluginsSpy = vi
+			.spyOn(instance, 'getAudioUnitPlugins')
+			.mockResolvedValue(refreshedAu)
+
+		await instance.refreshPlugins()
+
+		expect(getVst2PluginsSpy).toHaveBeenCalledWith(false)
+		expect(getVst3PluginsSpy).toHaveBeenCalledWith(false)
+		expect(getAudioUnitPluginsSpy).toHaveBeenCalledWith(false)
+
+		getVst2PluginsSpy.mockRestore()
+		getVst3PluginsSpy.mockRestore()
+		getAudioUnitPluginsSpy.mockRestore()
+
+		await expect(instance.getVst2Plugins()).resolves.toEqual(refreshedVst)
+		await expect(instance.getVst3Plugins()).resolves.toEqual(refreshedVst3)
+		await expect(instance.getAudioUnitPlugins()).resolves.toEqual(refreshedAu)
 	})
 
 	test('AbletonInfoMacOS constructor sets platform to darwin', () => {
