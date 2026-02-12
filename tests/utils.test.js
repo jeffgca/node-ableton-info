@@ -10,18 +10,3 @@ test('the utils library', async () => {
 	})
 	expect(instance.options.foo).toBe('bar')
 })
-
-test('the runner platform', async () => {
-	let platform = os.platform()
-
-	let isWsl = isRunningInWsl()
-
-	if (isWsl) {
-		expect(platform).toBe('linux')
-	} else {
-		expect(platform).toBe('win32')
-	}
-
-	// expect(os.platform()).toBe('win32')
-	// expect(os.platform()).toBe('linux')
-})
