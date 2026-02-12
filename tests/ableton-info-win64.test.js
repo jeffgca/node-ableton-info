@@ -13,7 +13,7 @@ vi.mock('child_process', async () => {
 import { AbletonInfoWin64 } from '../lib/ableton-info-win64.js'
 
 describe.skipIf(platform() !== 'win32')('AbletonInfoMacOS', () => {
-	test('AbletonInfoMacOS constructor sets platform to darwin', () => {
+	test('AbletonInfoWin64 init', () => {
 		const instance = new AbletonInfoWin64()
 		expect(instance.platform).toBe('win32')
 	})

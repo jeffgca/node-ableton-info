@@ -12,6 +12,16 @@ test('the utils library', async () => {
 })
 
 test('the runner platform', async () => {
-	expect(os.platform()).toBe('win32')
-	expect(os.platform()).toBe('linux')
+	let platform = os.platform()
+
+	let isWsl = isRunningInWsl()
+
+	if (isWsl) {
+		expect(platform).toBe('linux')
+	} else {
+		expect(platform).toBe('win32')
+	}
+
+	// expect(os.platform()).toBe('win32')
+	// expect(os.platform()).toBe('linux')
 })

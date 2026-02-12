@@ -1,0 +1,137 @@
+[
+	{
+		"name": "Windows 10, Version 1507",
+		"version": "10.0",
+		"build": "10240"
+	},
+	{
+		"name": "Windows 10, Version 1511",
+		"version": "10.0",
+		"build": "10586"
+	},
+	{
+		"name": "Windows 10, Version 1607",
+		"version": "10.0",
+		"build": "14393"
+	},
+	{
+		"name": "Windows Server 2016, Version 1607",
+		"version": "10.0",
+		"build": "14393"
+	},
+	{
+		"name": "Windows 10, Version 1703",
+		"version": "10.0",
+		"build": "15063"
+	},
+	{
+		"name": "Windows 10, Version 1709",
+		"version": "10.0",
+		"build": "16299"
+	},
+	{
+		"name": "Windows 10, Version 1803",
+		"version": "10.0",
+		"build": "17134"
+	},
+	{
+		"name": "Windows Server 2019, Version 1809",
+		"version": "10.0",
+		"build": "17763"
+	},
+	{
+		"name": "Windows 10, Version 1809",
+		"version": "10.0",
+		"build": "17763"
+	},
+	{
+		"name": "Windows 10, Version 1903",
+		"version": "10.0",
+		"build": "18362"
+	},
+	{
+		"name": "Windows 10, Version 1909",
+		"version": "10.0",
+		"build": "18363"
+	},
+	{
+		"name": "Windows Server, Version 1909",
+		"version": "10.0",
+		"build": "18363"
+	},
+	{
+		"name": "Windows 10, Version 2004",
+		"version": "10.0",
+		"build": "19041"
+	},
+	{
+		"name": "Windows Server, Version 2004",
+		"version": "10.0",
+		"build": "19041"
+	},
+	{
+		"name": "Windows 10, Version 20H2",
+		"version": "10.0",
+		"build": "19042"
+	},
+	{
+		"name": "Windows Server, Version 20H2",
+		"version": "10.0",
+		"build": "19042"
+	},
+	{
+		"name": "Windows 10, Version 21H1",
+		"version": "10.0",
+		"build": "19043"
+	},
+	{
+		"name": "Windows Server 2022, Version 21H2",
+		"version": "10.0",
+		"build": "20348"
+	},
+	{
+		"name": "Windows 11, Version 21H2",
+		"version": "10.0",
+		"build": "22000"
+	},
+	{
+		"name": "Windows 10, Version 21H2",
+		"version": "10.0",
+		"build": "19044"
+	},
+	{
+		"name": "Windows 11, Version 22H2",
+		"version": "10.0",
+		"build": "22621"
+	},
+	{
+		"name": "Windows 10, Version 22H2",
+		"version": "10.0",
+		"build": "19045"
+	},
+	{
+		"name": "Windows Server, Version 23H2",
+		"version": "10.0",
+		"build": "25398"
+	},
+	{
+		"name": "Windows 11, Version 23H2",
+		"version": "10.0",
+		"build": "22631"
+	},
+	{
+		"name": "Windows 11, Version 24H2",
+		"version": "10.0",
+		"build": "26100"
+	},
+	{
+		"name": "Windows Server 2025 (LTSC)",
+		"version": "10.0",
+		"build": "26100"
+	},
+	{
+		"name": "Windows 11, Version 25H2",
+		"version": "10.0",
+		"build": "26200"
+	}
+]
