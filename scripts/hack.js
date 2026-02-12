@@ -1,4 +1,4 @@
-import { AbletonInfoMacOS } from '../lib/ableton-info-macos.js'
+import { AbletonInfoMacOS, PluginInfoMacOS } from '../lib/ableton-info-macos.js'
 import { AbletonPrefs } from '../lib/ableton-prefs.js'
 
 let live = new AbletonInfoMacOS()
