@@ -1,6 +1,6 @@
 import { expect, test, vi, describe } from 'vitest'
 import { execSync } from 'child_process'
-import { platform } from 'os'
+import os, { platform } from 'os'
 
 vi.mock('child_process', async () => {
 	const actual = await vi.importActual('child_process')
@@ -12,6 +12,16 @@ vi.mock('child_process', async () => {
 
 import AbletonInfoMacOS from '../lib/ableton-info-macos.js'
 
+test('AbletonInfoMacOS constructor throws on non-macOS platform', () => {
+	const platformSpy = vi.spyOn(os, 'platform').mockReturnValue('win32')
+
+	expect(() => new AbletonInfoMacOS()).toThrow(
+		'AbletonInfoMacOS can only be used on macOS',
+	)
+
+	platformSpy.mockRestore()
+})
+
 describe.skipIf(platform() !== 'darwin')('AbletonInfoMacOS', () => {
 	test('AbletonInfoMacOS constructor sets platform to darwin', () => {
 		const instance = new AbletonInfoMacOS()
@@ -21,6 +31,19 @@ describe.skipIf(platform() !== 'darwin')('AbletonInfoMacOS', () => {
 	test('defaultInstallRoot returns /Applications/', () => {
 		const instance = new AbletonInfoMacOS()
 		expect(instance.defaultInstallRoot).toBe('/Applications/')
+	})
+
+	test('installedVersions getter returns getInstalledLiveVersions result', () => {
+		const instance = new AbletonInfoMacOS()
+		const expectedVersions = [{ version: '12.1.0', build: '1234' }]
+		const getInstalledLiveVersionsSpy = vi
+			.spyOn(instance, 'getInstalledLiveVersions')
+			.mockReturnValue(expectedVersions)
+
+		expect(instance.installedVersions).toEqual(expectedVersions)
+		expect(getInstalledLiveVersionsSpy).toHaveBeenCalledTimes(1)
+
+		getInstalledLiveVersionsSpy.mockRestore()
 	})
 
 	test('getMacOSVersion returns a version string', () => {
@@ -48,6 +71,81 @@ describe.skipIf(platform() !== 'darwin')('AbletonInfoMacOS', () => {
 		const version = instance.getMacOSVersion()
 
 		expect(version).toBe(currentVersion)
+	})
+
+	test('getInstalledLiveVersions returns versions for installed bundles only', () => {
+		const instance = new AbletonInfoMacOS()
+		const rootDirectory = '/Applications/'
+		const existingBundles = new Set([
+			`${rootDirectory}Ableton Live 12 Suite.app`,
+			`${rootDirectory}Ableton Live 11 Standard.app`,
+		])
+
+		vi.mocked(execSync).mockImplementation((command) => {
+			const appPath = command.match(/test -d "(.*)"/)?.[1]
+			if (appPath && existingBundles.has(appPath)) {
+				return ''
+			}
+			throw new Error('not found')
+		})
+
+		const getLiveVersionFromAppBundleSpy = vi
+			.spyOn(instance, 'getLiveVersionFromAppBundle')
+			.mockImplementation((appBundlePath) => ({
+				version: appBundlePath.includes('12 Suite') ? '12.1.0' : '11.3.35',
+				build: null,
+			}))
+
+		const result = instance.getInstalledLiveVersions(rootDirectory)
+
+		expect(result).toEqual([
+			{ version: '12.1.0', build: null },
+			{ version: '11.3.35', build: null },
+		])
+		expect(getLiveVersionFromAppBundleSpy).toHaveBeenCalledTimes(2)
+		expect(getLiveVersionFromAppBundleSpy).toHaveBeenNthCalledWith(
+			1,
+			'/Applications/Ableton Live 12 Suite.app',
+		)
+		expect(getLiveVersionFromAppBundleSpy).toHaveBeenNthCalledWith(
+			2,
+			'/Applications/Ableton Live 11 Standard.app',
+		)
+
+		vi.clearAllMocks()
+	})
+
+	test('getInstalledLiveVersions uses defaultInstallRoot when rootDirectory is not provided', () => {
+		const instance = new AbletonInfoMacOS()
+		const defaultRoot = '/CustomApplications/'
+		const existingBundlePath = `${defaultRoot}Ableton Live 12 Suite.app`
+
+		const defaultInstallRootSpy = vi
+			.spyOn(instance, 'defaultInstallRoot', 'get')
+			.mockReturnValue(defaultRoot)
+
+		vi.mocked(execSync).mockImplementation((command) => {
+			const appPath = command.match(/test -d "(.*)"/)?.[1]
+			if (appPath === existingBundlePath) {
+				return ''
+			}
+			throw new Error('not found')
+		})
+
+		const getLiveVersionFromAppBundleSpy = vi
+			.spyOn(instance, 'getLiveVersionFromAppBundle')
+			.mockReturnValue({ version: '12.1.0', build: null })
+
+		const result = instance.getInstalledLiveVersions()
+
+		expect(result).toEqual([{ version: '12.1.0', build: null }])
+		expect(defaultInstallRootSpy).toHaveBeenCalledTimes(1)
+		expect(getLiveVersionFromAppBundleSpy).toHaveBeenCalledTimes(1)
+		expect(getLiveVersionFromAppBundleSpy).toHaveBeenCalledWith(
+			'/CustomApplications/Ableton Live 12 Suite.app',
+		)
+
+		vi.clearAllMocks()
 	})
 
 	test('getExactVersionFromAppBundle returns version from Info.plist', async () => {
