@@ -8,6 +8,16 @@ import fs from 'node:fs/promises'
 
 import * as fsSync from 'node:fs'
 
+// console.log('env', process.env.WSL_DISTRO_NAME)
+
+// console.log(
+// 	'XXX debug',
+// 	`type: ${os.type()}`,
+// 	`release: ${os.release()}`,
+// 	`WSL_DISTRO_NAME: ${process.env.WSL_DISTRO_NAME}`,
+// 	`WSLENV: ${process.env.WSLENV}`,
+// )
+
 console.log('Wsl?', isRunningInWsl())
 
 let info = new AbletonInfoWin64()

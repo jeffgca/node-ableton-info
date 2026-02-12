@@ -11,7 +11,129 @@ vi.mock('child_process', async () => {
 	}
 })
 
-import { AbletonInfoWin64, PluginInfoWin64 } from '../lib/ableton-info-win64.js'
+import {
+	AbletonInfoWin64,
+	PluginInfoWin64,
+	isRunningInWsl,
+} from '../lib/ableton-info-win64.js'
+
+describe('isRunningInWsl', () => {
+	test('returns true when WSL_DISTRO_NAME environment variable is set and os.type is Linux', () => {
+		const originalEnv = process.env.WSL_DISTRO_NAME
+		const originalWslEnv = process.env.WSLENV
+		process.env.WSL_DISTRO_NAME = 'Ubuntu'
+		delete process.env.WSLENV
+
+		const typeSpy = vi.spyOn(os, 'type').mockReturnValue('Linux')
+
+		const result = isRunningInWsl()
+
+		expect(result).toBe(true)
+
+		typeSpy.mockRestore()
+
+		// Restore original values
+		if (originalEnv === undefined) {
+			delete process.env.WSL_DISTRO_NAME
+		} else {
+			process.env.WSL_DISTRO_NAME = originalEnv
+		}
+		if (originalWslEnv !== undefined) {
+			process.env.WSLENV = originalWslEnv
+		}
+	})
+
+	test('returns true when WSLENV environment variable is set and os.type is Linux', () => {
+		const originalDistro = process.env.WSL_DISTRO_NAME
+		const originalWslEnv = process.env.WSLENV
+		delete process.env.WSL_DISTRO_NAME
+		process.env.WSLENV = 'PATH/l'
+
+		const typeSpy = vi.spyOn(os, 'type').mockReturnValue('Linux')
+
+		const result = isRunningInWsl()
+
+		expect(result).toBe(true)
+
+		typeSpy.mockRestore()
+
+		// Restore original values
+		if (originalDistro !== undefined) {
+			process.env.WSL_DISTRO_NAME = originalDistro
+		}
+		if (originalWslEnv === undefined) {
+			delete process.env.WSLENV
+		} else {
+			process.env.WSLENV = originalWslEnv
+		}
+	})
+
+	test('returns false when WSL environment variables are set but os.type is not Linux', () => {
+		const originalEnv = process.env.WSL_DISTRO_NAME
+		process.env.WSL_DISTRO_NAME = 'Ubuntu'
+
+		const typeSpy = vi.spyOn(os, 'type').mockReturnValue('Windows_NT')
+
+		const result = isRunningInWsl()
+
+		expect(result).toBe(false)
+
+		typeSpy.mockRestore()
+
+		// Restore original value
+		if (originalEnv === undefined) {
+			delete process.env.WSL_DISTRO_NAME
+		} else {
+			process.env.WSL_DISTRO_NAME = originalEnv
+		}
+	})
+
+	test('returns false when os.type is Linux but WSL environment variables are not set', () => {
+		const originalDistro = process.env.WSL_DISTRO_NAME
+		const originalWslEnv = process.env.WSLENV
+		delete process.env.WSL_DISTRO_NAME
+		delete process.env.WSLENV
+
+		const typeSpy = vi.spyOn(os, 'type').mockReturnValue('Linux')
+
+		const result = isRunningInWsl()
+
+		expect(result).toBe(false)
+
+		typeSpy.mockRestore()
+
+		// Restore original values
+		if (originalDistro !== undefined) {
+			process.env.WSL_DISTRO_NAME = originalDistro
+		}
+		if (originalWslEnv !== undefined) {
+			process.env.WSLENV = originalWslEnv
+		}
+	})
+
+	test('returns false when not running in WSL (Windows_NT)', () => {
+		const originalDistro = process.env.WSL_DISTRO_NAME
+		const originalWslEnv = process.env.WSLENV
+		delete process.env.WSL_DISTRO_NAME
+		delete process.env.WSLENV
+
+		const typeSpy = vi.spyOn(os, 'type').mockReturnValue('Windows_NT')
+
+		const result = isRunningInWsl()
+
+		expect(result).toBe(false)
+
+		typeSpy.mockRestore()
+
+		// Restore original values
+		if (originalDistro !== undefined) {
+			process.env.WSL_DISTRO_NAME = originalDistro
+		}
+		if (originalWslEnv !== undefined) {
+			process.env.WSLENV = originalWslEnv
+		}
+	})
+})
 
 // Note: Platform check test is skipped as mocking os.platform() with WSL checks is complex.
 // The actual platform validation is tested in the platform-specific describe blocks below.
