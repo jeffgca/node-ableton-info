@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { AbletonPrefs } from '../lib/ableton-prefs.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -77,6 +77,16 @@ describe('AbletonPrefs', () => {
 			const config1 = prefs.getVst3Configuration()
 			const config2 = prefs.getVst3Configuration()
 			expect(config1).toStrictEqual(config2)
+		})
+
+		it('should not throw when byte at index 15 is not 2 with current guard expression', () => {
+			const findAllOccurrencesSpy = vi
+				.spyOn(prefs, 'findAllOccurrences')
+				.mockReturnValue([0, 0])
+
+			expect(() => prefs.getVst3Configuration()).not.toThrow()
+
+			findAllOccurrencesSpy.mockRestore()
 		})
 	})
 
@@ -505,6 +515,25 @@ describe('AbletonPrefs', () => {
 
 			const result = prefs.extractVst3CustomPathUnified(bytes)
 			expect(result).toBe('/Users/jeff/Desktop/tmp/vst3-custom')
+		})
+	})
+
+	describe('_extractWin32Vst3CustomPath', () => {
+		beforeEach(async () => {
+			prefsPath = path.join(__dirname, 'testdata', 'Preferences.cfg')
+			prefs = await new AbletonPrefs(prefsPath)
+		})
+
+		it('should return false for escaped-byte Windows path input', () => {
+			const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+			const testString =
+				'Vst3Preferences\x02\x01\x01)C:/w/w\x15TempoFollowerPrefData'
+			const bytes = new TextEncoder().encode(testString)
+
+			const result = prefs._extractWin32Vst3CustomPath(bytes)
+
+			expect(result).toBe(false)
+			logSpy.mockRestore()
 		})
 	})
 
