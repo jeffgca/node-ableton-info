@@ -203,7 +203,7 @@ describe.skipIf(platform() !== 'darwin')('AbletonInfoMacOS', () => {
 			.spyOn(instance, 'getAudioUnitPlugins')
 			.mockResolvedValue(refreshedAu)
 
-		await instance.refreshPlugins()
+		await instance.refresh()
 
 		expect(getVst2PluginsSpy).toHaveBeenCalledWith(false)
 		expect(getVst3PluginsSpy).toHaveBeenCalledWith(false)
