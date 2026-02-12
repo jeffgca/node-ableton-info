@@ -1,6 +1,7 @@
 import { expect, test, vi, describe } from 'vitest'
 import { execSync } from 'child_process'
-import { platform } from 'os'
+import os, { platform } from 'os'
+import fs from 'node:fs/promises'
 
 vi.mock('child_process', async () => {
 	const actual = await vi.importActual('child_process')
@@ -10,9 +11,244 @@ vi.mock('child_process', async () => {
 	}
 })
 
-import { AbletonInfoWin64 } from '../lib/ableton-info-win64.js'
+import { AbletonInfoWin64, PluginInfoWin64 } from '../lib/ableton-info-win64.js'
 
-describe.skipIf(platform() !== 'win32')('AbletonInfoMacOS', () => {
+// Note: Platform check test is skipped as mocking os.platform() with WSL checks is complex.
+// The actual platform validation is tested in the platform-specific describe blocks below.
+
+describe.skipIf(platform() !== 'win32')('PluginInfoWin64', () => {
+	test('getVst2Plugins returns empty list when VST2 is disabled by config', async () => {
+		const readdirSpy = vi
+			.spyOn(fs, 'readdir')
+			.mockResolvedValue(['Synth.dll', 'Chord.dll', 'Readme.txt', 'FX.vst3'])
+
+		const instance = new PluginInfoWin64()
+		const result = await instance.getVst2Plugins(false)
+
+		expect(readdirSpy).toHaveBeenCalledTimes(0)
+		expect(result).toEqual([])
+
+		readdirSpy.mockRestore()
+	})
+
+	test('getVst2Plugins includes plugins from system and custom VST2 paths when enabled', async () => {
+		const readdirSpy = vi.spyOn(fs, 'readdir').mockImplementation((path) => {
+			if (path === 'C:\\Program Files\\VSTPlugins') {
+				return Promise.resolve(['DefaultSynth.dll', 'ignore.vst3'])
+			}
+			if (path === 'C:\\Program Files\\Steinberg\\VSTPlugins') {
+				return Promise.resolve(['SteinbergFX.dll', 'notes.md'])
+			}
+			if (path === 'D:\\CustomVST2\\') {
+				return Promise.resolve(['CustomEQ.dll', 'readme.txt'])
+			}
+			return Promise.resolve([])
+		})
+
+		const instance = new PluginInfoWin64({
+			vst2: {
+				enabled: true,
+				customEnabled: true,
+				customPath: 'D:\\CustomVST2\\',
+			},
+		})
+		await new Promise((resolve) => setTimeout(resolve, 0))
+		readdirSpy.mockClear()
+		const result = await instance.getVst2Plugins(false)
+
+		expect(readdirSpy).toHaveBeenCalledTimes(3)
+		expect(readdirSpy).toHaveBeenNthCalledWith(
+			1,
+			'C:\\Program Files\\VSTPlugins',
+		)
+		expect(readdirSpy).toHaveBeenNthCalledWith(
+			2,
+			'C:\\Program Files\\Steinberg\\VSTPlugins',
+		)
+		expect(readdirSpy).toHaveBeenNthCalledWith(3, 'D:\\CustomVST2\\')
+		expect(result).toEqual([
+			'C:\\Program Files\\VSTPlugins\\DefaultSynth.dll',
+			'C:\\Program Files\\Steinberg\\VSTPlugins\\SteinbergFX.dll',
+			'D:\\CustomVST2\\CustomEQ.dll',
+		])
+
+		readdirSpy.mockRestore()
+	})
+
+	test('getVst3Plugins returns empty list when VST3 is disabled by config', async () => {
+		const readdirSpy = vi
+			.spyOn(fs, 'readdir')
+			.mockResolvedValue(['StereoTool.vst3', 'Pad.vst3', 'Legacy.dll'])
+
+		const instance = new PluginInfoWin64()
+		const result = await instance.getVst3Plugins(false)
+
+		expect(readdirSpy).toHaveBeenCalledTimes(0)
+		expect(result).toEqual([])
+
+		readdirSpy.mockRestore()
+	})
+
+	test('getVst3Plugins includes plugins from system and custom VST3 paths when enabled', async () => {
+		const readdirSpy = vi.spyOn(fs, 'readdir').mockImplementation((path) => {
+			if (path === 'C:\\Program Files\\Common Files\\VST3') {
+				return Promise.resolve(['DefaultComp.vst3', 'skip.dll'])
+			}
+			if (path === 'D:\\MyVST3\\') {
+				return Promise.resolve(['CustomLimiter.vst3', 'readme.txt'])
+			}
+			return Promise.resolve([])
+		})
+
+		const instance = new PluginInfoWin64({
+			vst3: {
+				enabled: true,
+				customEnabled: true,
+				customPath: 'D:\\MyVST3\\',
+			},
+		})
+		await new Promise((resolve) => setTimeout(resolve, 0))
+		readdirSpy.mockClear()
+		const result = await instance.getVst3Plugins(false)
+
+		expect(readdirSpy).toHaveBeenCalledTimes(2)
+		expect(readdirSpy).toHaveBeenNthCalledWith(
+			1,
+			'C:\\Program Files\\Common Files\\VST3',
+		)
+		expect(readdirSpy).toHaveBeenNthCalledWith(2, 'D:\\MyVST3\\')
+		expect(result).toEqual([
+			'C:\\Program Files\\Common Files\\VST3\\DefaultComp.vst3',
+			'D:\\MyVST3\\CustomLimiter.vst3',
+		])
+
+		readdirSpy.mockRestore()
+	})
+
+	test('getVst2Plugins uses cache when cache has plugins', async () => {
+		const readdirSpy = vi.spyOn(fs, 'readdir').mockResolvedValue([])
+
+		const instance = new PluginInfoWin64()
+		await new Promise((resolve) => setTimeout(resolve, 10))
+
+		// Populate cache by calling with cache=false
+		await instance.getVst2Plugins(false)
+		readdirSpy.mockClear()
+
+		// Subsequent calls with cache=true (default) should not call readdir
+		await instance.getVst2Plugins()
+		await instance.getVst2Plugins(true)
+
+		expect(readdirSpy).toHaveBeenCalledTimes(0)
+
+		readdirSpy.mockRestore()
+	})
+
+	test('getVst3Plugins uses cache by default', async () => {
+		const instance = new PluginInfoWin64()
+		await new Promise((resolve) => setTimeout(resolve, 10))
+
+		// Manually populate the cache bypassing the constructor's async initialization
+		await instance.getVst3Plugins(false) // Populate cache
+
+		// Spy on the private method to see if it's called
+		const readdirSpy = vi.spyOn(fs, 'readdir')
+
+		// These calls should use cache and not call readdir
+		await instance.getVst3Plugins()
+		await instance.getVst3Plugins()
+
+		expect(readdirSpy).toHaveBeenCalledTimes(0)
+
+		readdirSpy.mockRestore()
+	})
+
+	test('refresh method refreshes all plugin caches using non-cached getter calls', async () => {
+		const instance = new PluginInfoWin64()
+		await new Promise((resolve) => setTimeout(resolve, 0))
+
+		const refreshedVst2 = ['C:\\refreshed.dll']
+		const refreshedVst3 = ['C:\\refreshed.vst3']
+
+		const getVst2PluginsSpy = vi
+			.spyOn(instance, 'getVst2Plugins')
+			.mockResolvedValue(refreshedVst2)
+		const getVst3PluginsSpy = vi
+			.spyOn(instance, 'getVst3Plugins')
+			.mockResolvedValue(refreshedVst3)
+
+		await instance.refresh()
+
+		expect(getVst2PluginsSpy).toHaveBeenCalledWith(false)
+		expect(getVst3PluginsSpy).toHaveBeenCalledWith(false)
+
+		getVst2PluginsSpy.mockRestore()
+		getVst3PluginsSpy.mockRestore()
+
+		await expect(instance.getVst2Plugins()).resolves.toEqual(refreshedVst2)
+		await expect(instance.getVst3Plugins()).resolves.toEqual(refreshedVst3)
+	})
+
+	test('map getter returns object with vst2 and vst3 arrays', async () => {
+		const instance = new PluginInfoWin64()
+		await new Promise((resolve) => setTimeout(resolve, 0))
+
+		const map = instance.map
+
+		expect(map).toHaveProperty('vst2')
+		expect(map).toHaveProperty('vst3')
+		expect(Array.isArray(map.vst2)).toBe(true)
+		expect(Array.isArray(map.vst3)).toBe(true)
+	})
+
+	test('getVst2Plugins handles missing directories gracefully', async () => {
+		const readdirSpy = vi.spyOn(fs, 'readdir').mockImplementation((path) => {
+			// Simulate missing directory
+			return Promise.reject(new Error('ENOENT: no such file or directory'))
+		})
+
+		const instance = new PluginInfoWin64({
+			vst2: {
+				enabled: true,
+				customEnabled: true,
+				customPath: 'D:\\NonExistent\\',
+			},
+		})
+		await new Promise((resolve) => setTimeout(resolve, 0))
+		readdirSpy.mockClear()
+		const result = await instance.getVst2Plugins(false)
+
+		// Should return empty array when directories don't exist
+		expect(result).toEqual([])
+
+		readdirSpy.mockRestore()
+	})
+
+	test('getVst3Plugins handles missing directories gracefully', async () => {
+		const readdirSpy = vi.spyOn(fs, 'readdir').mockImplementation((path) => {
+			// Simulate missing directory
+			return Promise.reject(new Error('ENOENT: no such file or directory'))
+		})
+
+		const instance = new PluginInfoWin64({
+			vst3: {
+				enabled: true,
+				customEnabled: true,
+				customPath: 'D:\\NonExistent\\',
+			},
+		})
+		await new Promise((resolve) => setTimeout(resolve, 0))
+		readdirSpy.mockClear()
+		const result = await instance.getVst3Plugins(false)
+
+		// Should return empty array when directories don't exist
+		expect(result).toEqual([])
+
+		readdirSpy.mockRestore()
+	})
+})
+
+describe.skipIf(platform() !== 'win32')('AbletonInfoWin64', () => {
 	test('AbletonInfoWin64 init', () => {
 		const instance = new AbletonInfoWin64()
 		expect(instance.platform).toBe('win32')
