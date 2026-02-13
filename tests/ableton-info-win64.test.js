@@ -375,4 +375,103 @@ describe.skipIf(platform() !== 'win32')('AbletonInfoWin64', () => {
 		const instance = new AbletonInfoWin64()
 		expect(instance.platform).toBe('win32')
 	})
+
+	test('getWindowsVersion returns correct info for Windows 10', () => {
+		const releaseSpy = vi.spyOn(os, 'release').mockReturnValue('10.0.19045')
+
+		const instance = new AbletonInfoWin64()
+		const result = instance.getWindowsVersion()
+
+		expect(result).toEqual({
+			majorVersion: 10,
+			buildNumber: 19045,
+			productName: 'Windows 10',
+		})
+
+		releaseSpy.mockRestore()
+	})
+
+	test('getWindowsVersion returns correct info for Windows 11', () => {
+		const releaseSpy = vi.spyOn(os, 'release').mockReturnValue('10.0.26000')
+
+		const instance = new AbletonInfoWin64()
+		const result = instance.getWindowsVersion()
+
+		expect(result).toEqual({
+			majorVersion: 10,
+			buildNumber: 26000,
+			productName: 'Windows 11',
+		})
+
+		releaseSpy.mockRestore()
+	})
+
+	test('getWindowsVersion returns Windows 11 for builds >= 26000', () => {
+		const releaseSpy = vi.spyOn(os, 'release').mockReturnValue('10.0.26100')
+
+		const instance = new AbletonInfoWin64()
+		const result = instance.getWindowsVersion()
+
+		expect(result).toEqual({
+			majorVersion: 10,
+			buildNumber: 26100,
+			productName: 'Windows 11',
+		})
+
+		releaseSpy.mockRestore()
+	})
+
+	test('getWindowsVersion returns Windows 10 for minimum supported build 10240', () => {
+		const releaseSpy = vi.spyOn(os, 'release').mockReturnValue('10.0.10240')
+
+		const instance = new AbletonInfoWin64()
+		const result = instance.getWindowsVersion()
+
+		expect(result).toEqual({
+			majorVersion: 10,
+			buildNumber: 10240,
+			productName: 'Windows 10',
+		})
+
+		releaseSpy.mockRestore()
+	})
+
+	test('getWindowsVersion returns Windows 10 for build just below Windows 11 threshold', () => {
+		const releaseSpy = vi.spyOn(os, 'release').mockReturnValue('10.0.25999')
+
+		const instance = new AbletonInfoWin64()
+		const result = instance.getWindowsVersion()
+
+		expect(result).toEqual({
+			majorVersion: 10,
+			buildNumber: 25999,
+			productName: 'Windows 10',
+		})
+
+		releaseSpy.mockRestore()
+	})
+
+	test('getWindowsVersion throws error for unsupported Windows version (build < 10240)', () => {
+		const releaseSpy = vi.spyOn(os, 'release').mockReturnValue('6.1.7601')
+
+		const instance = new AbletonInfoWin64()
+
+		expect(() => instance.getWindowsVersion()).toThrow(
+			'Unsupported Windows version: 6.1.7601. This library only supports Windows 10 and 11.',
+		)
+
+		releaseSpy.mockRestore()
+	})
+
+	test('getWindowsVersion throws error for Windows 8.1', () => {
+		const releaseSpy = vi.spyOn(os, 'release').mockReturnValue('6.3.9600')
+
+		const instance = new AbletonInfoWin64()
+
+		expect(() => instance.getWindowsVersion()).toThrow(
+			'Unsupported Windows version: 6.3.9600. This library only supports Windows 10 and 11.',
+		)
+
+		releaseSpy.mockRestore()
+	})
 })
