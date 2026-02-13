@@ -2,7 +2,10 @@ import {
 	AbletonInfoWin64,
 	isRunningInWsl,
 	runPowerShellCommand,
+	PluginInfoWin64,
 } from '../lib/ableton-info-win64.js'
+
+import { AbletonPrefs } from '../lib/ableton-prefs.js'
 
 import fs from 'node:fs/promises'
 
@@ -37,20 +40,26 @@ console.log(username)
 // // console.log('exists?', await fs.access(info.LIVE_PATHS.Install_Root))
 // console.log('windows version', info.getWindowsVersion())
 
-console.log(
-	'Installed Ableton Live versions:',
-	await info._getAbletonInstallations(),
-)
+// console.log(
+// 	'Installed Ableton Live versions:',
+// 	await info._getAbletonInstallations(),
+// )
 
 const exePath = `C:\\ProgramData\\Ableton\\Live\ 11\ Suite\\Program\\Ableton\ Live\ 11\ Suite.exe`
 
-console.log('exists?', fsSync.existsSync(exePath))
+console.log('Live exe exists?', fsSync.existsSync(exePath))
 
 const command = `"(Get-Item '${exePath}').VersionInfo.ProductVersion"`
 
-console.log('command', command)
+// console.log('command', command)
 
-console.log('result', runPowerShellCommand(command))
+console.log('Live version', runPowerShellCommand(command))
+
+let prefs = await new AbletonPrefs(
+	`C:\\Users\\${username}\\AppData\\Roaming\\Ableton\\Live 11.0.12\\Preferences\\Preferences.cfg`,
+)
+
+console.log('Plugin config', prefs.PluginConfig)
 
 // console.log(
 // 	'Installed Ableton Live versions:',

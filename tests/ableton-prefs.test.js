@@ -430,7 +430,7 @@ describe('AbletonPrefs', () => {
 				'Vst3Preferences\x02\x01\x01#/Users/jeff/Desktop/tmp/vst3-custom\x15TempoFollowerPrefData'
 			const bytes = new TextEncoder().encode(testString)
 
-			const result = prefs.extractVst3CustomPathUnified(bytes)
+			const result = prefs.extractVst3CustomPath(bytes)
 			expect(result).toBe('/Users/jeff/Desktop/tmp/vst3-custom')
 		})
 
@@ -440,7 +440,7 @@ describe('AbletonPrefs', () => {
 				'Vst3Preferences\x02\x01\x01)C:/Users/aniso/OneDrive/Desktop/hack/vst3\x15TempoFollowerPrefData'
 			const bytes = new TextEncoder().encode(testString)
 
-			const result = prefs.extractVst3CustomPathUnified(bytes)
+			const result = prefs.extractVst3CustomPath(bytes)
 			expect(result).toBe('C:/Users/aniso/OneDrive/Desktop/hack/vst3')
 		})
 
@@ -449,7 +449,7 @@ describe('AbletonPrefs', () => {
 				'Vst3Preferences\x02\x01\x01)C:/Users/test/vst3\x15TempoFollowerPrefData'
 			const bytes = new TextEncoder().encode(testString)
 
-			const result = prefs.extractVst3CustomPathUnified(bytes)
+			const result = prefs.extractVst3CustomPath(bytes)
 			expect(result).toBe('C:/Users/test/vst3')
 		})
 
@@ -458,7 +458,7 @@ describe('AbletonPrefs', () => {
 				'Vst3Preferences\x02\x01\x01)C:\\Users\\test\\vst3\x15TempoFollowerPrefData'
 			const bytes = new TextEncoder().encode(testString)
 
-			const result = prefs.extractVst3CustomPathUnified(bytes)
+			const result = prefs.extractVst3CustomPath(bytes)
 			expect(result).toBe('C:\\Users\\test\\vst3')
 		})
 
@@ -467,13 +467,13 @@ describe('AbletonPrefs', () => {
 				'Vst3Preferences\x02\x01\x01#/Users/test-user/Desktop/my-vst3\x15TempoFollowerPrefData'
 			const bytes = new TextEncoder().encode(testString)
 
-			const result = prefs.extractVst3CustomPathUnified(bytes)
+			const result = prefs.extractVst3CustomPath(bytes)
 			expect(result).toBe('/Users/test-user/Desktop/my-vst3')
 		})
 
 		it('should return false when no path pattern is found', () => {
 			const bytes = new Uint8Array([1, 2, 3, 4, 5])
-			const result = prefs.extractVst3CustomPathUnified(bytes)
+			const result = prefs.extractVst3CustomPath(bytes)
 			expect(result).toBe(false)
 		})
 
@@ -482,7 +482,7 @@ describe('AbletonPrefs', () => {
 				'Vst3Preferences\x02\x01\x01#/Users/jeff/Desktop/tmp/vst3-custom'
 			const bytes = new TextEncoder().encode(testString)
 
-			const result = prefs.extractVst3CustomPathUnified(bytes)
+			const result = prefs.extractVst3CustomPath(bytes)
 			expect(result).toBe(false)
 		})
 
@@ -499,7 +499,7 @@ describe('AbletonPrefs', () => {
 			const indexes = prefs.findAllOccurrences('Vst3Preferences', prefs.bytes)
 			const bytes = prefs.bytes.slice(indexes[1], indexes[1] + 200)
 
-			const result = prefs.extractVst3CustomPathUnified(bytes)
+			const result = prefs.extractVst3CustomPath(bytes)
 
 			// Should extract the path (will be macOS path since it's from test data)
 			expect(result).toBeTruthy()
@@ -513,27 +513,8 @@ describe('AbletonPrefs', () => {
 				'Vst3Preferences\x02\x01\x01#/Users/jeff/Desktop/tmp/vst3-custom\x15'
 			const bytes = new TextEncoder().encode(testString)
 
-			const result = prefs.extractVst3CustomPathUnified(bytes)
+			const result = prefs.extractVst3CustomPath(bytes)
 			expect(result).toBe('/Users/jeff/Desktop/tmp/vst3-custom')
-		})
-	})
-
-	describe('_extractWin32Vst3CustomPath', () => {
-		beforeEach(async () => {
-			prefsPath = path.join(__dirname, 'testdata', 'Preferences.cfg')
-			prefs = await new AbletonPrefs(prefsPath)
-		})
-
-		it('should return false for escaped-byte Windows path input', () => {
-			const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-			const testString =
-				'Vst3Preferences\x02\x01\x01)C:/w/w\x15TempoFollowerPrefData'
-			const bytes = new TextEncoder().encode(testString)
-
-			const result = prefs._extractWin32Vst3CustomPath(bytes)
-
-			expect(result).toBe(false)
-			logSpy.mockRestore()
 		})
 	})
 
