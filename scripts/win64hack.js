@@ -4,6 +4,7 @@ import {
 	runPowerShellCommand,
 	PluginInfoWin64,
 } from '../lib/ableton-info-win64.js'
+import path from 'node:path'
 
 import { AbletonPrefs } from '../lib/ableton-prefs.js'
 
@@ -23,7 +24,7 @@ import * as fsSync from 'node:fs'
 
 console.log('Wsl?', isRunningInWsl())
 
-let info = new AbletonInfoWin64()
+// let info = new AbletonInfoWin64()
 
 import os from 'node:os'
 
@@ -45,21 +46,33 @@ console.log(username)
 // 	await info._getAbletonInstallations(),
 // )
 
-const exePath = `C:\\ProgramData\\Ableton\\Live\ 11\ Suite\\Program\\Ableton\ Live\ 11\ Suite.exe`
+// const exePath = `C:\\ProgramData\\Ableton\\Live\ 11\ Suite\\Program\\Ableton\ Live\ 11\ Suite.exe`
 
-console.log('Live exe exists?', fsSync.existsSync(exePath))
+// console.log('Live exe exists?', fsSync.existsSync(exePath))
 
-const command = `"(Get-Item '${exePath}').VersionInfo.ProductVersion"`
+// const command = `"(Get-Item '${exePath}').VersionInfo.ProductVersion"`
 
-// console.log('command', command)
+// // console.log('command', command)
 
-console.log('Live version', runPowerShellCommand(command))
+// console.log('Live version', runPowerShellCommand(command))
 
-let prefs = await new AbletonPrefs(
-	`C:\\Users\\${username}\\AppData\\Roaming\\Ableton\\Live 11.0.12\\Preferences\\Preferences.cfg`,
+let prefsfiles = [
+	'./tests/testdata/win64/Preferences-init-x64.cfg',
+	'./tests/testdata/live-11/Preferences-all-prefs-set.cfg',
+	'./tests/testdata/live-11/Preferences-vst3-init.cfg',
+	'./tests/testdata/win64/Preferences-all-x64.cfg',
+]
+
+Promise.all(
+	prefsfiles.map(async (file) => {
+		// console.log('file', file)
+		let _prefs = await new AbletonPrefs(file)
+		let config = _prefs.PluginConfig
+		console.log('Plugin config', path.basename(file), _prefs.PluginConfig)
+	}),
 )
 
-console.log('Plugin config', prefs.PluginConfig)
+// console.log('Plugin config', prefs.PluginConfig)
 
 // console.log(
 // 	'Installed Ableton Live versions:',
